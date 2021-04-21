@@ -21,7 +21,7 @@ CSV file format.
 Version:        0.1
 Creation Date:  22/02/2021
 Author:         Filipe Soares
-Github Repo:	https://github.com/MyTech78
+Github Repo:	https://github.com/MyTech78/Hardware_report_PowerShell.git
 Description:	First version of PowerShell script to generate a csv hardware report by quering WMI.
   
 .EXAMPLE
