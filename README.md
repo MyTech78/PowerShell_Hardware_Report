@@ -1,4 +1,4 @@
-# Hardware_report_PowerShell
+# PowerShell_Hardware_report
 
 DESCRIPTION
         
