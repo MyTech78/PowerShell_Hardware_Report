@@ -2,7 +2,7 @@
 
 DESCRIPTION
         
-        The script collects hardware infrormation on the host computer by quering WMI classes.
+        The script collects hardware information on the host computer by querying WMI classes.
 
 SYNTAX
   
@@ -11,7 +11,7 @@ SYNTAX
 PARAMETERS  
     
     -ImputFile <String>
-        The path including file name, that contains a list of computer names or IP addresses to be processed.
+        The path including file name, which contains a list of computer names or IP addresses to be processed.
 
     -OutputFile <String>
         The path including file name, to be created as a Hardware report file.
@@ -40,7 +40,7 @@ EXAMPLES
 
     PS C:\>.\Hardware_Report.ps1 -ImputFile ".\Computers.txt" -OutputFile ".\computerReport.csv"
 
-    assuming you are in the the correct path in powershell
+    assuming you are in the correct path in PowerShell
     and the Computers.txt is in the same folder as the Hardware_Report.ps1
     then the computerReport.csv will be generated in the same location.
 
