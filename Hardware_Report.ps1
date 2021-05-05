@@ -1,12 +1,12 @@
-﻿<#
+<#
 .SYNOPSIS
 Hardware Inventory PS Script.
 
 .DESCRIPTION
-The script collects hardware infrormation on the host computer by quering WMI classes. 
+The script collects hardware information on the host computer by querying WMI classes. 
 
 .PARAMETER ImputFile
-The path including file name, that contains a list of computer names or IP addresses to be processed.
+The path including file name, which contains a list of computer names or IP addresses to be processed.
 
 .PARAMETER OutputFile
 The path including file name, to be created as a Hardware report file.
@@ -22,7 +22,7 @@ Version:        0.1
 Creation Date:  22/02/2021
 Author:         Filipe Soares
 Github Repo:	https://github.com/MyTech78/Hardware_report_PowerShell.git
-Description:	First version of PowerShell script to generate a csv hardware report by quering WMI.
+Description:	First version of PowerShell script to generate a CSV hardware report by querying WMI.
   
 .EXAMPLE
 	.\Hardware_Report.ps1
@@ -35,7 +35,7 @@ same location.
 .EXAMPLE
 	.\Hardware_Report.ps1 -ImputFile ".\Computers.txt" -OutputFile ".\computerReport.csv"
 
-	assuming you are in the the correct path in powershell
+	assuming you are in the correct path in PowerShell
 and the Computers.txt is in the same folder as the Hardware_Report.ps1
 then the computerReport.csv will be generated in the same location.
 
@@ -81,7 +81,7 @@ if (Test-Path $ImputFile){
 	$arrComputers = Get-Content -Path $ImputFile
 }
 else {
-	Write-Host "The Computers.txt file does not exist, this needs to be specefied as an argumentt when running the script" -ForegroundColor white -BackgroundColor red
+	Write-Host "The Computers.txt file does not exist, this needs to be specified as an argument when running the script" -ForegroundColor white -BackgroundColor red
 	Write-Host "or be placed in the same folder as the script, for more info type Get-Help Hardware_Report.ps1 -detailed" -ForegroundColor white -BackgroundColor red
 }
 
