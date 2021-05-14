@@ -99,12 +99,12 @@ $Report = @()
 # loop through the list of computers collecting WMI class information
 foreach ($strComputer in $arrComputers){
 
-	$ComputerSystem_colItems = Get-WmiObject Win32_ComputerSystem -Namespace 'root\CIMV2' -computername $strComputer
-	$BIOSInfo_colItems = Get-WmiObject Win32_BIOS -Namespace 'root\CIMV2' -computername $strComputer
-	$OSInfo_colItems = Get-WmiObject Win32_OperatingSystem -Namespace 'root\CIMV2' -computername $strComputer
-	$CPUInfo_colItems = Get-WmiObject Win32_Processor -Namespace 'root\CIMV2' -computername $strComputer
-	$DiskInfo_colItems = Get-WmiObject Win32_DiskDrive -Namespace 'root\CIMV2' -computername $strComputer
-	$Network_colItems = Get-WmiObject Win32_NetworkAdapterConfiguration -Namespace 'root\CIMV2'-ComputerName $strComputer | where{$_.IPEnabled -eq 'True'}
+	$ComputerSystem_colItems = Get-CimInstance Win32_ComputerSystem -Namespace 'root\CIMV2' -computername $strComputer
+	$BIOSInfo_colItems = Get-CimInstance Win32_BIOS -Namespace 'root\CIMV2' -computername $strComputer
+	$OSInfo_colItems = Get-CimInstance Win32_OperatingSystem -Namespace 'root\CIMV2' -computername $strComputer
+	$CPUInfo_colItems = Get-CimInstance Win32_Processor -Namespace 'root\CIMV2' -computername $strComputer
+	$DiskInfo_colItems = Get-CimInstance Win32_DiskDrive -Namespace 'root\CIMV2' -computername $strComputer
+	$Network_colItems = Get-CimInstance Win32_NetworkAdapterConfiguration -Namespace 'root\CIMV2'-ComputerName $strComputer | where{$_.IPEnabled -eq 'True'}
 	
 	
 	# order and filter the WMI info for the report
