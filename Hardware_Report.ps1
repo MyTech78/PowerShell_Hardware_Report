@@ -151,6 +151,7 @@ foreach ($strComputer in $arrComputers){
 			$v = 0
 			foreach ($item in $Network_colItems){
 				$v += 1
+				$hash.add("[$v]Network Descr", $item.Description)
 				$hash.add("[$v]DHCP Enabled", $item.DHCPEnabled)
 				$hash.add("[$v]IPv4 Address", $item.IPAddress[0])
 				$hash.add("[$v]IPv6 Address", $item.IPAddress[1])
@@ -160,6 +161,7 @@ foreach ($strComputer in $arrComputers){
 			}
 		}
 		else {
+			$hash.add("Network Descr", $item.Description)
 			$hash.add("DHCP Enabled", $Network_colItems.DHCPEnabled)
 			$hash.add("IPv4 Address", $Network_colItems.IPAddress[0])
 			$hash.add("IPv6 Address", $Network_colItems.IPAddress[1])
