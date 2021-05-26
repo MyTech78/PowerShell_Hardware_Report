@@ -99,12 +99,16 @@ $Report = @()
 # loop through the list of computers collecting WMI class information
 foreach ($strComputer in $arrComputers){
 
-	$ComputerSystem_colItems = Get-CimInstance Win32_ComputerSystem -Namespace 'root\CIMV2' -computername $strComputer
-	$BIOSInfo_colItems = Get-CimInstance Win32_BIOS -Namespace 'root\CIMV2' -computername $strComputer
-	$OSInfo_colItems = Get-CimInstance Win32_OperatingSystem -Namespace 'root\CIMV2' -computername $strComputer
-	$CPUInfo_colItems = Get-CimInstance Win32_Processor -Namespace 'root\CIMV2' -computername $strComputer
-	$DiskInfo_colItems = Get-CimInstance Win32_DiskDrive -Namespace 'root\CIMV2' -computername $strComputer
-	$Network_colItems = Get-CimInstance Win32_NetworkAdapterConfiguration -Namespace 'root\CIMV2'-ComputerName $strComputer | where{$_.IPEnabled -eq 'True'}
+    # New CimSecion
+    $CimS = New-CimSession -ComputerName $strComputer -Authentication Negotiate
+
+    # Get Cim Info
+	$ComputerSystem_colItems = Get-CimInstance -ClassName Win32_ComputerSystem -Namespace 'root\CIMV2' -CimSession $CimS
+	$BIOSInfo_colItems = Get-CimInstance -ClassName Win32_BIOS -Namespace 'root\CIMV2' -CimSession $CimS
+	$OSInfo_colItems = Get-CimInstance -ClassName Win32_OperatingSystem -Namespace 'root\CIMV2' -CimSession $CimS
+	$CPUInfo_colItems = Get-CimInstance -ClassName Win32_Processor -Namespace 'root\CIMV2' -CimSession $CimS
+	$DiskInfo_colItems = Get-CimInstance -ClassName Win32_DiskDrive -Namespace 'root\CIMV2' -CimSession $CimS
+	$Network_colItems = Get-CimInstance -ClassName Win32_NetworkAdapterConfiguration -Namespace 'root\CIMV2'-CimSession $CimS | Where-Object {$_.IPEnabled -eq 'True'}
 	
 	
 	# order and filter the WMI info for the report
@@ -118,15 +122,9 @@ foreach ($strComputer in $arrComputers){
 		'Serial Number' = $BIOSInfo_colItems.SerialNumber
 		'Operating System' = $OSInfo_colItems.Caption
 		'Processor' = $CPUInfo_colItems.Name
-		'Disk1 Model' = $DiskInfo_colItems.Model[0]
-		'Disk1 Size GB' = ("{0:N2}" -F ($DiskInfo_colItems.Size[0]/1GB))
-		'Disk1 Media Type' = $DiskInfo_colItems.MediaType[0]
-		'Disk2 Model' = $DiskInfo_colItems.Model[1]
-		'Disk2 Size GB' = ("{0:N2}" -F ($DiskInfo_colItems.Size[1]/1GB))
-		'Disk2 Media Type' = $DiskInfo_colItems.MediaType[1]
-		'Disk3 Model' = $DiskInfo_colItems.Model[2]
-		'Disk3 Size GB' = ("{0:N2}" -F ($DiskInfo_colItems.Size[2]/1GB))
-		'Disk3 Media Type' = $DiskInfo_colItems.MediaType[2]
+		'Disk Model' = $DiskInfo_colItems.Model
+		'Disk Size GB' = ("{0:N2}" -F ($DiskInfo_colItems.Size/1GB))
+		'Disk Media Type' = $DiskInfo_colItems.MediaType
 		'DHCP Enabled' = $Network_colItems.DHCPEnabled[0]
 		'IPv4 Address' = $Network_colItems.IPAddress[0]
 		'IPv6 Address' = $Network_colItems.IPAddress[1]
@@ -141,6 +139,9 @@ foreach ($strComputer in $arrComputers){
 	
 	# append each object to the report array
 	$Report += $Object
+
+    # Remove CimSession for this host 
+    Remove-CimSession $CimS
 }
 
 # export the report to a csv file 
