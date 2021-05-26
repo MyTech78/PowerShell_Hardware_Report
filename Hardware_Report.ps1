@@ -3,7 +3,7 @@
 Hardware Inventory PS Script.
 
 .DESCRIPTION
-The script collects hardware information on the host computer by querying WMI classes. 
+The script collects hardware information on the host computer by querying WinRM Cim classes. 
 
 .PARAMETER ImputFile
 The path including file name, which contains a list of computer names or IP addresses to be processed.
@@ -23,6 +23,14 @@ Creation Date:  22/02/2021
 Author:         Filipe Soares
 Github Repo:	https://github.com/MyTech78/Hardware_report_PowerShell.git
 Description:	First version of PowerShell script to generate a CSV hardware report by querying WMI.
+
+.NOTES
+Version:        0.2
+Creation Date:  26/05/2021
+Author:         Filipe Soares
+Github Repo:	https://github.com/MyTech78/Hardware_report_PowerShell.git
+Description:	Added support form multiple disks and ip addresses
+				and a CimSession for better performance
   
 .EXAMPLE
 	.\Hardware_Report.ps1
@@ -112,30 +120,56 @@ foreach ($strComputer in $arrComputers){
 	
 	
 	# order and filter the WMI info for the report
-	$hash = [ordered]@{
-		'Compute Name' = $OSInfo_colItems.CSname
-		'Computer Manufacturer' = $ComputerSystem_colItems.Manufacturer
-		'Computer Model' = $ComputerSystem_colItems.Model
-		'Memory Size GB' = ("{0:N2}" -F ($ComputerSystem_colItems.TotalPhysicalMemory/1GB))
-		'BIOS' = $BIOSInfo_colItems.Description
-		'BIOS Version' = $BIOSInfo_colItems.SMBIOSBIOSVersion + '.' + $BIOSInfo_colItems.SMBIOSMajorVersion + '.' + $BIOSInfo_colItems.SMBIOSMinorVersion
-		'Serial Number' = $BIOSInfo_colItems.SerialNumber
-		'Operating System' = $OSInfo_colItems.Caption
-		'Processor' = $CPUInfo_colItems.Name
-		'Disk Model' = $DiskInfo_colItems.Model[0]
-		'Disk Size GB' = ("{0:N2}" -F ($DiskInfo_colItems.Size[0]/1GB))
-		'Disk Media Type' = $DiskInfo_colItems.MediaType[0]
-		'DHCP Enabled' = $Network_colItems.DHCPEnabled[0]
-		'IPv4 Address' = $Network_colItems.IPAddress[0]
-		'IPv6 Address' = $Network_colItems.IPAddress[1]
-		'Subnet Mask:' = $Network_colItems.IPSubnet[0]
-		'Gateway' = $Network_colItems.DefaultIPGateway[0]
-		'MAC Address1' = $Network_colItems.MACAddress[0]
+	$hash = [ordered]@{}
+
+		$hash.add('Compute Name', $OSInfo_colItems.CSname)
+		$hash.add('Computer Manufacturer', $ComputerSystem_colItems.Manufacturer)
+		$hash.add('Computer Model', $ComputerSystem_colItems.Model)
+		$hash.add('Memory Size GB', ("{0:N2}" -F ($ComputerSystem_colItems.TotalPhysicalMemory/1GB)))
+		$hash.add('BIOS', $BIOSInfo_colItems.Description)
+		$hash.add('BIOS Version', $BIOSInfo_colItems.SMBIOSBIOSVersion + '.' + $BIOSInfo_colItems.SMBIOSMajorVersion + '.' + $BIOSInfo_colItems.SMBIOSMinorVersion)
+		$hash.add('Serial Number', $BIOSInfo_colItems.SerialNumber)
+		$hash.add('Operating System', $OSInfo_colItems.Caption)
+		$hash.add('Processor', $CPUInfo_colItems.Name)
 		
+		if ($DiskInfo_colItems.Count -gt 1){
+			$v = 0
+			foreach ($item in $DiskInfo_colItems){
+				$v += 1
+				$hash.add("[$v]Disk Model", $item.Model)
+				$hash.add("[$v]Disk Size GB", "{0:N2}" -F ($item.Size/1GB))
+				$hash.add("[$v]Disk Media Type", $item.MediaType)
+			}
 		}
-	
+		else {
+			$hash.add("Disk Model", $DiskInfo_colItems.Model)
+			$hash.add("Disk Size GB", "{0:N2}" -F ($DiskInfo_colItems.Size/1GB))
+			$hash.add("Disk Media Type", $DiskInfo_colItems.MediaType)
+		}
+		
+		if ($Network_colItems.Count -gt 1) {
+			$v = 0
+			foreach ($item in $Network_colItems){
+				$v += 1
+				$hash.add("[$v]DHCP Enabled", $item.DHCPEnabled)
+				$hash.add("[$v]IPv4 Address", $item.IPAddress[0])
+				$hash.add("[$v]IPv6 Address", $item.IPAddress[1])
+				$hash.add("[$v]Subnet Mask", $item.IPSubnet[0])
+				$hash.add("[$v]Gateway", [string]$item.DefaultIPGateway)
+				$hash.add("[$v]MAC Address", $item.MACAddress)
+			}
+		}
+		else {
+			$hash.add("DHCP Enabled", $Network_colItems.DHCPEnabled)
+			$hash.add("IPv4 Address", $Network_colItems.IPAddress[0])
+			$hash.add("IPv6 Address", $Network_colItems.IPAddress[1])
+			$hash.add("Subnet Mask", $Network_colItems.IPSubnet[0])
+			$hash.add("Gateway", [string]$Network_colItems.DefaultIPGateway)
+			$hash.add("MAC Address", $Network_colItems.MACAddress)
+		}
+
 	# create a new object for each computer with the hashed information 
-	$Object = New-Object PSObject -Property $hash
+	$Object = [pscustomobject]$hash
 	
 	# append each object to the report array
 	$Report += $Object
