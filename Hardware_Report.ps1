@@ -122,9 +122,9 @@ foreach ($strComputer in $arrComputers){
 		'Serial Number' = $BIOSInfo_colItems.SerialNumber
 		'Operating System' = $OSInfo_colItems.Caption
 		'Processor' = $CPUInfo_colItems.Name
-		'Disk Model' = $DiskInfo_colItems.Model
-		'Disk Size GB' = ("{0:N2}" -F ($DiskInfo_colItems.Size/1GB))
-		'Disk Media Type' = $DiskInfo_colItems.MediaType
+		'Disk Model' = $DiskInfo_colItems.Model[0]
+		'Disk Size GB' = ("{0:N2}" -F ($DiskInfo_colItems.Size[0]/1GB))
+		'Disk Media Type' = $DiskInfo_colItems.MediaType[0]
 		'DHCP Enabled' = $Network_colItems.DHCPEnabled[0]
 		'IPv4 Address' = $Network_colItems.IPAddress[0]
 		'IPv6 Address' = $Network_colItems.IPAddress[1]
