@@ -24,13 +24,19 @@ Author:         Filipe Soares
 Github Repo:	https://github.com/MyTech78/Hardware_report_PowerShell.git
 Description:	First version of PowerShell script to generate a CSV hardware report by querying WMI.
 
-.NOTES
 Version:        0.2
 Creation Date:  26/05/2021
 Author:         Filipe Soares
 Github Repo:	https://github.com/MyTech78/Hardware_report_PowerShell.git
 Description:	Added support form multiple disks and ip addresses
 				and a CimSession for better performance
+
+Version:        0.3
+Creation Date:  28/05/2021
+Author:         Filipe Soares
+Github Repo:	https://github.com/MyTech78/Hardware_report_PowerShell.git
+Description:	Added a log folder as default and a log file to assist with large queries 
+				Added a Reports folder as default to save the reports
   
 .EXAMPLE
 	.\Hardware_Report.ps1
@@ -69,18 +75,24 @@ param(
 [string]$OutputFile
 )
 
+
+
 # set default values for imput file
-if ($ImputFile -eq ""){
+if (-not($ImputFile)){
 	$iFile = "Computers.txt"
-	$Path = Split-Path $MyInvocation.MyCommand.Path -Parent
-	$ImputFile = $Path + "\" + $iFile
+	$ImputFile = Join-Path -Path $PSScriptRoot -ChildPath $iFile
 }
 
 # set default values for output file
-if ($OutputFile -eq ""){
-	$oFile = "ComputerReport.csv"
-	$Path = Split-Path $MyInvocation.MyCommand.Path -Parent
-	$OutputFile = $Path + "\" + $oFile
+if (-not($OutputFile)){
+	$Date = Get-Date -Format "_dd_MMMM_yyyy"
+	$oFile = "ComputerReport"
+	$Path = "$PSScriptRoot\Reports"
+	$OutputFile = Join-Path -Path $Path -ChildPath "$oFile$Date$.csv"
+		if (-not (Test-Path -Path $Path))
+		{
+			[Void](New-Item -ItemType Directory -Path $Path -Force)
+		}
 }
 
 # check if imput file exists
@@ -100,24 +112,85 @@ $Report = @()
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
+function Write-Log {
+    [CmdletBinding()]
+    param (
+        [String]$Message,
+        [String]$Warning,
+        [Object]$ErrorObj,
+		[String]$LogFolderPath = "$PSScriptRoot/logs",
+        [String]$LogFilePrefix = 'Hardware_report'
+    )
+ 
+    $Date = Get-Date -Format "dd_MMMM_yyyy"
+    $Time = Get-Date -Format "HH:mm:ss"
+    $LogFile = "$LogFolderPath\$LogFilePrefix`_$Date.log"
+	
+    if (-not (Test-Path -Path $LogFolderPath))
+    {
+        [Void](New-Item -ItemType Directory -Path $LogFolderPath -Force)
+    }
 
+    if (-not (Test-Path -Path $LogFile))
+    {
+        [Void](New-Item -ItemType File -Path $LogFile -Force)
+    }
+ 
+    $LogMessage = "[$Time] "
+ 
+    if ($PSBoundParameters.ContainsKey("ErrorObj"))
+    {
+		$LogMessage += "Error: $ErrorObj"
+		[void](Write-Output -Message $LogMessage)
+    }
+    elseif ($PSBoundParameters.ContainsKey("Warning"))
+    {
+        $LogMessage += "Warning: $Warning"
+        [void](Write-Output -Message $LogMessage)
+    }
+    else
+    {
+        $LogMessage += "Info: $Message"
+        [void](Write-Output -Message $LogMessage)
+    }
+ 
+    Add-Content -Path $LogFile -Value "$LogMessage"
+}
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
+
+Write-Log "Start of Script..."
+Write-Log "Attempting to process $($arrComputers.Count) items found in the computer list."
 
 # loop through the list of computers collecting WMI class information
 foreach ($strComputer in $arrComputers){
 
-    # New CimSecion
-    $CimS = New-CimSession -ComputerName $strComputer -Authentication Negotiate
+	try {
+		Write-Log "Attempting to create a New-CimSession to $strComputer"
+		# New CimSecion
+		$CimS = New-CimSession -ComputerName $strComputer -Authentication Negotiate -ErrorAction Stop
+	}
+	catch {
+		Write-Log -ErrorObj $_
+		Write-Log -Warning "$strComputer will not by added to report." 
+		continue
+	}
 
-    # Get Cim Info
-	$ComputerSystem_colItems = Get-CimInstance -ClassName Win32_ComputerSystem -Namespace 'root\CIMV2' -CimSession $CimS
-	$BIOSInfo_colItems = Get-CimInstance -ClassName Win32_BIOS -Namespace 'root\CIMV2' -CimSession $CimS
-	$OSInfo_colItems = Get-CimInstance -ClassName Win32_OperatingSystem -Namespace 'root\CIMV2' -CimSession $CimS
-	$CPUInfo_colItems = Get-CimInstance -ClassName Win32_Processor -Namespace 'root\CIMV2' -CimSession $CimS
-	$DiskInfo_colItems = Get-CimInstance -ClassName Win32_DiskDrive -Namespace 'root\CIMV2' -CimSession $CimS
-	$Network_colItems = Get-CimInstance -ClassName Win32_NetworkAdapterConfiguration -Namespace 'root\CIMV2'-CimSession $CimS | Where-Object {$_.IPEnabled -eq 'True'}
-	
+	try {
+		Write-Log "Attempting to collect CimClass information from $strComputer"
+		# Get Cim Info
+		$ComputerSystem_colItems = Get-CimInstance -ClassName Win32_ComputerSystem -Namespace 'root\CIMV2' -CimSession $CimS -ErrorAction Stop
+		$BIOSInfo_colItems = Get-CimInstance -ClassName Win32_BIOS -Namespace 'root\CIMV2' -CimSession $CimS -ErrorAction Stop
+		$OSInfo_colItems = Get-CimInstance -ClassName Win32_OperatingSystem -Namespace 'root\CIMV2' -CimSession $CimS -ErrorAction Stop
+		$CPUInfo_colItems = Get-CimInstance -ClassName Win32_Processor -Namespace 'root\CIMV2' -CimSession $CimS -ErrorAction Stop
+		$DiskInfo_colItems = Get-CimInstance -ClassName Win32_DiskDrive -Namespace 'root\CIMV2' -CimSession $CimS -ErrorAction Stop
+		$Network_colItems = Get-CimInstance -ClassName Win32_NetworkAdapterConfiguration -Namespace 'root\CIMV2'-CimSession $CimS | Where-Object {$_.IPEnabled -eq 'True'} -ErrorAction Stop
+	}
+	catch {
+		Write-Log -ErrorObj $_
+		Write-Log -Warning "$strComputer not added to report " 
+		continue	
+	}
 	
 	# order and filter the WMI info for the report
 	$hash = [ordered]@{}
@@ -175,10 +248,28 @@ foreach ($strComputer in $arrComputers){
 	
 	# append each object to the report array
 	$Report += $Object
+	Write-Log "Appending information from $strComputer to the report"
 
-    # Remove CimSession for this host 
-    Remove-CimSession $CimS
+	try {
+		Write-Log "Attempting to remove CimSession to $strComputer"
+		# Remove CimSession for this host 
+		Remove-CimSession $CimS
+	}
+	catch {
+		Write-Log -ErrorObj $_
+		continue
+	}
+
 }
 
-# export the report to a csv file 
-$Report | Export-Csv $OutputFile -NoTypeInformation
+try {
+	Write-Log "Attempting to create the report file in $OutputFile"
+	# export the report to a csv file 
+	$Report | Export-Csv $OutputFile -NoTypeInformation	-ErrorAction Stop
+}
+catch {
+	Write-Log -ErrorObj $_
+	continue
+}
+
+Write-Log "End of Script..."
